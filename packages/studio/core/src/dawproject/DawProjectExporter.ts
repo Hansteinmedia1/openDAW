@@ -19,6 +19,8 @@ import {
     DeviceSchema,
     FileReferenceSchema,
     LanesSchema,
+    MarkerSchema,
+    MarkersSchema,
     NoteSchema,
     NotesSchema,
     ParameterEncoder,
@@ -42,6 +44,7 @@ import {
     AudioFileBox,
     AudioRegionBox,
     AudioUnitBox,
+    MarkerBox,
     BoxVisitor,
     NoteEventBox,
     NoteEventCollectionBox,
@@ -352,6 +355,19 @@ export namespace DawProjectExporter {
                     }, LanesSchema)))
         }
 
+        const writeMarkers = (): Optional<MarkersSchema> => {
+            const markers = timelineBox.markerTrack.markers.pointerHub.incoming()
+                .map(({box}) => asInstanceOf(box, MarkerBox))
+                .sort((markerA, markerB) => markerA.position.getValue() - markerB.position.getValue())
+            if (markers.length === 0) {return undefined}
+            return Xml.element({
+                marker: markers.map(box => Xml.element({
+                    time: box.position.getValue() / PPQN.Quarter,
+                    name: box.label.getValue(),
+                    color: Color.hslToHex(box.hue.getValue(), 1.0, 0.60)
+                }, MarkerSchema))
+            }, MarkersSchema)
+        }
         return Xml.element({
             version: "1.0",
             application: Xml.element({
@@ -363,6 +379,7 @@ export namespace DawProjectExporter {
             arrangement: Xml.element({
                 tempoAutomation: writeTempoAutomation(),
                 timeSignatureAutomation: writeSignatureAutomation(),
+                markers: writeMarkers(),
                 lanes: Xml.element({
                     lanes: writeLanes(),
                     timeUnit: TimeUnit.BEATS

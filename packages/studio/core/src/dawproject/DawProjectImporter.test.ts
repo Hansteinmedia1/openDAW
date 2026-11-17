@@ -2,13 +2,15 @@ import {describe, expect, it} from "vitest"
 import {fileURLToPath} from "url"
 import * as path from "node:path"
 import * as fs from "node:fs"
-import {panic} from "@opendaw/lib-std"
+import {panic, Terminable} from "@opendaw/lib-std"
 import {Xml} from "@opendaw/lib-xml"
-import {ProjectSchema} from "@opendaw/lib-dawproject"
+import {FileReferenceSchema, ProjectSchema} from "@opendaw/lib-dawproject"
 import {LoopableRegion, PPQN} from "@opendaw/lib-dsp"
-import {NoteRegionBox} from "@opendaw/studio-boxes"
+import {MarkerBox, NoteRegionBox} from "@opendaw/studio-boxes"
 import {DawProject} from "./DawProject"
 import {DawProjectImport} from "./DawProjectImporter"
+import {DawProjectExporter} from "./DawProjectExporter"
+import {SampleLoaderManager} from "@opendaw/studio-adapters"
 
 describe("DawProjectImport", () => {
     it("import", async () => {
@@ -112,5 +114,60 @@ describe("DawProjectImport loop window", () => {
             expect(cycles.length).toBeGreaterThan(0)
             expect(cycles.length).toBeLessThanOrEqual(Math.ceil(region.duration / region.loopDuration) + 1)
         }
+    })
+})
+
+describe("DawProjectImport markers", () => {
+    const noResources: DawProject.ResourceProvider = {
+        fromPath: () => panic("No resources"),
+        fromUUID: () => panic("No resources")
+    }
+    const projectXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <Project version="1.0">
+        <Transport><Tempo unit="bpm" value="126.0" id="tempo"/></Transport>
+        <Structure>
+            <Track contentType="audio notes" loaded="true" id="master-track" name="Master">
+                <Channel audioChannels="2" role="master" solo="false" id="master-channel"/>
+            </Track>
+        </Structure>
+        <Arrangement id="arrangement">
+            <Markers>
+                <Marker time="100.0" name="Verse 1"/>
+                <Marker time="4.0" name="Intro" color="#ff0000"/>
+                <Marker time="128.8125"/>
+            </Markers>
+            <Lanes timeUnit="beats" id="lanes"/>
+        </Arrangement>
+    </Project>`
+
+    it("imports arrangement markers into the marker track", async () => {
+        const {skeleton} = await DawProjectImport.read(Xml.parse(projectXml, ProjectSchema), noResources)
+        const markers = skeleton.mandatoryBoxes.timelineBox.markerTrack.markers.pointerHub.incoming()
+            .map(({box}) => box as MarkerBox)
+            .map(box => ({position: box.position.getValue(), label: box.label.getValue(), hue: box.hue.getValue()}))
+            .sort((a, b) => a.position - b.position)
+        expect(markers).toEqual([
+            {position: 4 * PPQN.Quarter, label: "Intro", hue: 0},
+            {position: 100 * PPQN.Quarter, label: "Verse 1", hue: 190},
+            {position: Math.round(128.8125 * PPQN.Quarter), label: "Marker 3", hue: 190}
+        ])
+    })
+
+    it("writes the markers back on export", async () => {
+        const {skeleton} = await DawProjectImport.read(Xml.parse(projectXml, ProjectSchema), noResources)
+        const sampleManager: SampleLoaderManager = {
+            record: () => panic("No samples"),
+            getOrCreate: () => panic("No samples"),
+            remove: () => panic("No samples"),
+            invalidate: () => panic("No samples"),
+            register: () => Terminable.Empty
+        }
+        const schema = DawProjectExporter.write(skeleton, sampleManager,
+            {write: (path: string) => Xml.element({path, external: false}, FileReferenceSchema)})
+        expect(schema.arrangement?.markers?.marker?.map(({time, name}) => ({time, name}))).toEqual([
+            {time: 4, name: "Intro"}, {time: 100, name: "Verse 1"}, {time: 128.8125, name: "Marker 3"}
+        ])
+        const reimported = Xml.parse(Xml.toElement("Project", schema).outerHTML, ProjectSchema)
+        expect(reimported.arrangement?.markers?.marker?.length).toBe(3)
     })
 })

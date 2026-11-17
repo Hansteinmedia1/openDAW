@@ -314,8 +314,8 @@ export class MarkerSchema implements Referenceable {
 
 @Xml.Class("Markers")
 export class MarkersSchema {
-    @Xml.Element("Marker", Array)
-    readonly marker!: ReadonlyArray<MarkerSchema>
+    @Xml.ElementRef(MarkerSchema)
+    readonly marker?: ReadonlyArray<MarkerSchema>
 }
 
 @Xml.Class("Warp")
@@ -465,7 +465,7 @@ export class ArrangementSchema implements Referenceable {
     readonly tempoAutomation?: PointsSchema
 
     @Xml.Element("Markers", MarkersSchema)
-    readonly markers?: MarkerSchema
+    readonly markers?: MarkersSchema
 
     @Xml.Element("Lanes", LanesSchema)
     readonly lanes?: LanesSchema

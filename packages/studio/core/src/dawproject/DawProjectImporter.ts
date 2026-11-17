@@ -33,6 +33,7 @@ import {
     EqualizerSchema,
     LaneSchema,
     LanesSchema,
+    MarkersSchema,
     NotesSchema,
     PointsSchema,
     ProjectSchema,
@@ -59,6 +60,7 @@ import {
     CaptureAudioBox,
     CaptureMidiBox,
     GrooveShuffleBox,
+    MarkerBox,
     NoteEventBox,
     NoteEventCollectionBox,
     NoteRegionBox,
@@ -541,6 +543,14 @@ export namespace DawProjectImport {
             }
 
             ifDefined(arrangement.timeSignatureAutomation, readSignatureAutomation)
+            const readMarkers = (markers: MarkersSchema): void => markers.marker?.forEach((marker, index) =>
+                MarkerBox.create(boxGraph, UUID.generate(), box => {
+                    box.position.setValue(Math.round(marker.time * PPQN.Quarter))
+                    box.label.setValue(marker.name ?? `Marker ${index + 1}`)
+                    box.hue.setValue(isDefined(marker.color) ? Color.hexToHsl(marker.color).h : 190)
+                    box.track.refer(timelineBox.markerTrack.markers)
+                }))
+            ifDefined(arrangement.markers, readMarkers)
 
             return Promise.all(arrangement?.lanes?.lanes?.filter(timeline => isInstanceOf(timeline, LanesSchema))
                 .map(readLane) ?? [])
