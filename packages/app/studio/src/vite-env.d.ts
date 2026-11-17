@@ -8,6 +8,7 @@ declare module "*.sass?inline" {
 interface ImportMetaEnv {
     readonly BUILD_UUID: string
     readonly VITE_MODEL_BASE_URL?: string
+    readonly VITE_LIVE_SERVER_URL?: string
 }
 
 interface ImportMeta {

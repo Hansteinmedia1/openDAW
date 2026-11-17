@@ -43,7 +43,6 @@ import {ChainedSampleProvider, ChainedSoundfontProvider, ChainedWclapProvider} f
 import {IconSymbol, initializeColors, setColorScheme} from "@opendaw/studio-enums"
 import {SampleGarbage, StudioPreferences, WclapStorage} from "@opendaw/studio-core"
 import {StudioShortcutManager} from "@/service/StudioShortcutManager"
-import {Tour} from "@/ui/tour/Tour"
 import {Menu} from "@/ui/components/Menu"
 import {TouchContextMenu} from "@/ui/TouchContextMenu"
 import {WasmEngine} from "@opendaw/studio-core-wasm"
@@ -179,7 +178,6 @@ export const boot = async ({workersUrl, workletsUrl, wasmProcessorUrl, wasmOffli
             .toast(message, isDefined(icon) ? IconSymbol.fromName(icon) : IconSymbol.Notification)
     })
     replaceChildren(surface.ground, App(service))
-    Tour.install(service)
     AnimationFrame.start(window)
     installCursors()
     const opfsProbe = await Promises.tryCatch(Workers.Opfs.isAvailable())

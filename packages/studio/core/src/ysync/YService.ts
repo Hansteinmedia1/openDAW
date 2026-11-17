@@ -20,10 +20,11 @@ export namespace YService {
 
     export const getOrCreateRoom = async (optProject: Option<Project>,
                                           env: ProjectEnv,
-                                          roomName: string): Promise<RoomResult> => {
+                                          roomName: string,
+                                          roomServerUrl: string = serverUrl): Promise<RoomResult> => {
         if (roomName === "signaling") {return panic("Invalid room name: signaling")}
         const doc = new Y.Doc()
-        const provider: WebsocketProvider = new WebsocketProvider(serverUrl, roomName, doc)
+        const provider: WebsocketProvider = new WebsocketProvider(roomServerUrl, roomName, doc)
         console.debug("clientID:", doc.clientID)
         console.debug("Provider url:", provider.url)
         if (!provider.synced) {

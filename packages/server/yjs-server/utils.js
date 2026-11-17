@@ -261,7 +261,8 @@ export const setupWSConnection = (conn, req, {docName = (req.url || '').slice(1)
         'https://dev.opendaw.studio',
         'https://live.opendaw.studio',
         'https://localhost:8080',
-        'https://inspector.yjs.dev'
+        'https://inspector.yjs.dev',
+        ...(process.env.ALLOWED_ORIGINS || '').split(',').filter(entry => entry.length > 0)
     ]
     const origin = req.headers.origin
     if (origin && !allowedOrigins.includes(origin)) {

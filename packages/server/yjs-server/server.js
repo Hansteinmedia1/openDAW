@@ -2,6 +2,7 @@
 
 import {WebSocketServer} from "ws"
 import https from "https"
+import http from "http"
 import fs from "fs"
 import * as number from "lib0/number"
 import {setupWSConnection, ROOM_CLEANUP_DELAY_MS} from "./utils.js"
@@ -11,7 +12,10 @@ const host = process.env.HOST || "0.0.0.0"
 const port = number.parseInt(process.env.PORT || "443")
 const isDev = process.env.NODE_ENV === "development"
 
-const certConfig = isDev ? {
+// TLS=off: plain HTTP behind a reverse proxy that terminates TLS (self-hosted installations)
+const behindProxy = process.env.TLS === "off"
+
+const certConfig = behindProxy ? {} : isDev ? {
     key: fs.readFileSync("../../../certs/localhost-key.pem"),
     cert: fs.readFileSync("../../../certs/localhost.pem"),
 } : {
@@ -25,14 +29,15 @@ const corsAllowedOrigins = [
     'https://localhost:8080'
 ]
 
-const server = https.createServer(certConfig, (req, res) => {
+const requestListener = (req, res) => {
     const origin = req.headers.origin
     if (origin && corsAllowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin)
     }
     res.writeHead(200, {"Content-Type": "text/plain"})
     res.end("okay")
-})
+}
+const server = behindProxy ? http.createServer(requestListener) : https.createServer(certConfig, requestListener)
 
 // Yjs sync WebSocket server
 const wss = new WebSocketServer({noServer: true})

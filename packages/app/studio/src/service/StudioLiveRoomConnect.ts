@@ -15,7 +15,16 @@ import {RoomSignaling} from "@/service/RoomSignaling"
 import {Events} from "@opendaw/lib-dom"
 import {removeAwarenessStates} from "y-protocols/awareness"
 
-const LiveServerUrl = "wss://live.opendaw.studio"
+// A path such as "/live" in VITE_LIVE_SERVER_URL points to a room server on the studio's own host
+const resolveLiveServerUrl = (): string => {
+    const configured = import.meta.env.VITE_LIVE_SERVER_URL
+    if (!isDefined(configured) || configured.length === 0) {return "wss://live.opendaw.studio"}
+    return configured.startsWith("/")
+        ? `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}${configured}`
+        : configured
+}
+
+const LiveServerUrl = resolveLiveServerUrl()
 
 const classifyConnectError = (error: unknown): RoomResultStatus => {
     if (Errors.isAbort(error)) {return "abort"}
@@ -44,7 +53,7 @@ export const connectRoom = async (service: StudioService, prefillRoomName?: Opti
     const sourceCover = sourceProfile.flatMap(profile => profile.cover)
     const sourceCoverId = sourceProfile.mapOr(profile => profile.coverId, "")
     const {status, value: roomResult, error} = await Promises.tryCatch(
-        YService.getOrCreateRoom(sourceProfile.map(profile => profile.project), service, roomName))
+        YService.getOrCreateRoom(sourceProfile.map(profile => profile.project), service, roomName, LiveServerUrl))
     if (status === "resolved") {
         reportRoomResult(sessionId, "success")
         const heartbeat = startRoomDurationHeartbeat(sessionId)
