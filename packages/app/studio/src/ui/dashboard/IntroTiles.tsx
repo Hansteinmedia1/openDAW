@@ -47,7 +47,7 @@ const tiles: ReadonlyArray<Tile> = [
     {
         icon: IconSymbol.Code,
         title: "Open Source",
-        text: "openDAW is open source. Inspect it, fork it, self-host it, or build your own devices and "
+        text: "Basalt is based on openDAW by André Michelle (AGPL v3), which is open source. Inspect it, fork it, self-host it, or build your own devices and "
             + "extensions on top.",
         path: "/manuals/open-source"
     }

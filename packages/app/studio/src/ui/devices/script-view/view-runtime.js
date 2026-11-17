@@ -361,7 +361,7 @@
     }
     const start = async ({fonts}) => {
         for (const {weight, bytes} of fonts) {
-            const face = new FontFace("Rubik", bytes, {weight: String(weight)})
+            const face = new FontFace("Schibsted Grotesk", bytes, {weight: String(weight)})
             try {document.fonts.add(await face.load())} catch (error) {reportError(error, false)}
         }
         const ViewClass = classes?.[config.className]

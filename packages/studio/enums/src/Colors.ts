@@ -1,19 +1,24 @@
 import {Color} from "@opendaw/lib-std"
 
-export const ColorSchemes = ["classic", "modern", "contrast"] as const
+export const ColorSchemes = ["basalt", "classic", "modern", "contrast"] as const
 
 export type ColorScheme = typeof ColorSchemes[number]
 
-export const DefaultColorScheme: ColorScheme = "classic"
+export const DefaultColorScheme: ColorScheme = "basalt"
 
 type NeutralName = "bright" | "gray" | "dark" | "shadow" | "black" | "background" | "panelBackground"
     | "panelBackgroundBright" | "panelBackgroundDark" | "headerBackground" | "footerBackground"
 
-type Neutral = readonly [saturation: number, lightness: number]
+type Neutral = readonly [saturation: number, lightness: number, hue?: number]
 
 const NeutralHue = 197
 
 const Neutrals: Record<ColorScheme, Record<NeutralName, Neutral>> = {
+    basalt: {
+        bright: [48, 92, 39], gray: [42, 84, 39], dark: [24, 75, 39], shadow: [11, 62, 38], black: [9, 39],
+        background: [16, 8], panelBackground: [15, 13], panelBackgroundBright: [14, 16], panelBackgroundDark: [15, 12],
+        headerBackground: [19, 5], footerBackground: [16, 8]
+    },
     classic: {
         bright: [5, 100], gray: [31, 91], dark: [15, 84], shadow: [10, 60], black: [10, 30],
         background: [8, 9], panelBackground: [14, 12], panelBackgroundBright: [13, 16], panelBackgroundDark: [14, 11],
@@ -34,20 +39,20 @@ const Neutrals: Record<ColorScheme, Record<NeutralName, Neutral>> = {
 let scheme: ColorScheme = DefaultColorScheme
 
 const neutral = (name: NeutralName): Color => {
-    const [saturation, lightness] = Neutrals[scheme][name]
-    return new Color(NeutralHue, saturation, lightness)
+    const [saturation, lightness, hue] = Neutrals[scheme][name]
+    return new Color(hue ?? NeutralHue, saturation, lightness)
 }
 
 export const Colors = {
     white: new Color(0, 0, 100),
-    blue: new Color(189, 100, 65),
+    blue: new Color(35, 51, 64),
     green: new Color(150, 77, 69),
-    yellow: new Color(60, 100, 84),
+    yellow: new Color(51, 86, 63),
     cream: new Color(65, 37, 83),
-    orange: new Color(31, 100, 73),
-    red: new Color(354, 100, 65),
+    orange: new Color(34, 41, 54),
+    red: new Color(7, 100, 64),
     purple: new Color(314, 100, 78),
-    menuActive: new Color(210, 90, 40),
+    menuActive: new Color(27, 39, 35),
     get bright(): Color {return neutral("bright")},
     get gray(): Color {return neutral("gray")},
     get dark(): Color {return neutral("dark")},

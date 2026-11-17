@@ -87,7 +87,7 @@ export class VideoOverlay implements Terminable {
         let x = (width - totalWidth) / 2
         const y = height - margin
 
-        ctx.font = `300 ${fontSize}px Rubik`
+        ctx.font = `450 ${fontSize}px "Schibsted Grotesk"`
         ctx.textBaseline = "bottom"
         ctx.textAlign = "center"
         ctx.shadowColor = "rgba(255, 255, 255, 1)"
@@ -95,7 +95,7 @@ export class VideoOverlay implements Terminable {
         ctx.fillStyle = "rgba(255, 255, 255, 0.95)"
         ctx.fillText(projectName, width / 2, y - fontSize)
 
-        ctx.font = `300 ${positionFontSize}px Rubik`
+        ctx.font = `450 ${positionFontSize}px "Schibsted Grotesk"`
         for (const char of chars) {
             const w = char === "." || char === ":" ? separatorWidth : charWidth
             ctx.fillText(char, x + w / 2, y)

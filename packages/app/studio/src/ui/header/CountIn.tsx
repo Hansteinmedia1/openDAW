@@ -15,7 +15,7 @@ export const CountIn = ({lifecycle, engine}: Construct) => {
     const textElement: SVGTextElement = (
         <text x="50%" y="50%" dy="0.08em"
               font-size="64"
-              font-family="Rubik"
+              font-family="Schibsted Grotesk"
               text-anchor="middle"
               dominant-baseline="middle"
               text-rendering="geometricPrecision"

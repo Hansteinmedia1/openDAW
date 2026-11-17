@@ -112,7 +112,7 @@ export namespace PreferencesPageLabels {
         "appearance": {
             "color-scheme": ColorSchemes.map(value => ({
                 value,
-                label: value === "classic" ? "Classic" : value === "modern" ? "Modern" : "High Contrast"
+                label: value === "basalt" ? "Basalt" : value === "classic" ? "Classic" : value === "modern" ? "Modern" : "High Contrast"
             }))
         }
     }

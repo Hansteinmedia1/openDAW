@@ -24,8 +24,8 @@ export const Dashboard = ({lifecycle, service}: Construct) => (
     <div className={className}>
         <div className="intro">
             <header className="hero">
-                <h1>openDAW</h1>
-                <div className="tagline">Create Music Online</div>
+                <h1>Basalt</h1>
+                <div className="tagline">Musikproduktion im Browser</div>
             </header>
             <ActionButtons lifecycle={lifecycle} service={service}/>
         </div>

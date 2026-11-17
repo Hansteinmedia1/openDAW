@@ -1,3 +1,7 @@
+> **Basalt** – dieser Fork (Zweig `ableton-import`) ist die Fassung von Oliver Hanstein: eigenes Erscheinungsbild „Basalt“,
+> Ableton-Live-Set-Import und -Export, selbst gehostete KI-Modelle und Live-Räume, Brücke für automatisierte Teilnehmer.
+> Basalt basiert auf openDAW von André Michelle (AGPL v3). Der folgende Text ist das unveränderte README von openDAW.
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/andremichelle/openDAW/refs/heads/main/packages/app/studio/public/favicon.svg" height="120"/>
   <h1 align="center">openDAW</h1>

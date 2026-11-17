@@ -45,7 +45,7 @@ export const ArchitectureCanvas = ({lifecycle, model}: Construct) => {
         const orange = Colors.orange.toString()
         const shadow = Colors.shadow.toString()
         ctx.clearRect(0, 0, width, height)
-        ctx.font = "9px Rubik"
+        ctx.font = "9px \"Schibsted Grotesk\""
         ctx.textAlign = "center"
         ctx.textBaseline = "top"
         const ioWidth = 10

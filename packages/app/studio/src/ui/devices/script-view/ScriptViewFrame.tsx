@@ -69,14 +69,14 @@ const CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-i
 
 const isRecord = (value: unknown): value is Message => typeof value === "object" && value !== null
 
-type FontBytes = ReadonlyArray<{ weight: number, bytes: ArrayBuffer }>
+type FontBytes = ReadonlyArray<{ weight: string, bytes: ArrayBuffer }>
 
 const fonts: { bytes: Nullable<Promise<FontBytes>> } = {bytes: null}
 
 const loadFonts = (): Promise<FontBytes> => fonts.bytes ??= Promise.all(
-    [Fonts.Rubik, Fonts.RubikBold].map(font => fetch(String(font.src))
+    [Fonts.SchibstedGrotesk].map(font => fetch(String(font.src))
         .then(response => response.arrayBuffer())
-        .then(bytes => ({weight: Number(font["font-weight"]), bytes}))))
+        .then(bytes => ({weight: String(font["font-weight"]), bytes}))))
 
 // the studio colours plus the display colours every stock device display paints with (DisplayPaint)
 const colorMap = (): { [name: string]: string } => ({
@@ -96,7 +96,7 @@ const buildSrcdoc = (config: object, userScript: string): string => `<!doctype h
 <html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${CSP}">
 <style>:root { color-scheme: dark; ${cssVariables()} }
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent }
-body { font-family: Rubik, sans-serif; font-size: 11px; color: var(--color-gray) }</style></head>
+body { font-family: "Schibsted Grotesk", sans-serif; font-size: 11px; color: var(--color-gray) }</style></head>
 <body><script>globalThis.__openDAWConfig = ${JSON.stringify(config).replace(/</g, "\\u003c")}</script>
 <script>${inlineScript(runtimeSource)}</script>
 <script>${inlineScript(userScript)}</script></body></html>`

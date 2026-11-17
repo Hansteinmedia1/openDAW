@@ -19,8 +19,8 @@ if (Browser.isMobile() && mobileContest !== null) {
     const className = Html.adoptStyleSheet(mobileCss, "Mobile")
     document.body.innerHTML = `<div class="${className}">
         <div>
-            <img class="logo" src="/favicon.svg" alt="openDAW logo">
-            <h1>openDAW</h1>
+            <img class="logo" src="/favicon.svg" alt="Basalt-Logo">
+            <h1>Basalt</h1>
             <p class="claim">Create Music Online</p>
             <img class="screenshot" src="/images/studio-meta.jpg" alt="The openDAW Studio timeline, devices and mixer running in a web browser.">
             <p>Hey there, thanks for stopping by!</p>

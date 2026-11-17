@@ -62,7 +62,7 @@ export const NoteFall = ({lifecycle, service, updateNotifier}: Construct) => {
         context.textAlign = "center"
         context.textBaseline = "bottom"
         const noteWidth = actualWidth / pianoLayout.count * noteScale.getValue()
-        context.font = `${noteWidth * devicePixelRatio * 0.55}px ${Fonts.Rubik["font-family"]}`
+        context.font = `${noteWidth * devicePixelRatio * 0.55}px "${Fonts.SchibstedGrotesk["font-family"]}"`
         renderCalls.length = 0
         project.rootBoxAdapter.audioUnits.adapters().forEach(audioUnitAdapter => {
             const trackBoxAdapters = audioUnitAdapter.tracks.values()

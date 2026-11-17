@@ -1,8 +1,8 @@
 import {Color} from "@opendaw/lib-std"
 
 export namespace DisplayPaint {
-    const base = new Color(200, 83, 60)
-    const grid = new Color(200, 40, 70)
+    const base = new Color(35, 51, 64)
+    const grid = new Color(35, 25, 70)
 
     export const strokeStyle = (opacity: number = 0.75) => base.opacity(opacity).toString()
     export const fillStyle = () => base.brightness(15).toString()

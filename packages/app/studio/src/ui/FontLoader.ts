@@ -6,7 +6,8 @@ export class FontLoader {
     @Lazy
     static async load() {
         return Promise.allSettled([
-            loadFont(Fonts.Rubik), loadFont(Fonts.RubikBold), loadFont(Fonts.OpenSans)
+            loadFont(Fonts.SchibstedGrotesk), loadFont(Fonts.SchibstedGroteskItalic),
+            loadFont(Fonts.PlexMono), loadFont(Fonts.PlexMonoMedium), loadFont(Fonts.OpenSans)
         ])
     }
 }
