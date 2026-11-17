@@ -16,7 +16,7 @@ import {SampleAPI} from "@opendaw/studio-core"
 import {AccessKey} from "./AccessKey"
 import {base64Credentials, OpenDAWHeaders} from "./OpenDAWHeaders"
 import {SampleIndex} from "./SampleIndex"
-import {fetchIndex} from "./IndexFetch"
+import {CloudAssetsEnabled, fetchIndex} from "./IndexFetch"
 import {z} from "zod"
 import {AudioData, WavFile} from "@opendaw/lib-dsp"
 
@@ -44,6 +44,7 @@ export class OpenSampleAPI implements SampleAPI {
         const uuidAsString = UUID.toString(uuid)
         const known = (await this.all()).find(sample => sample.uuid === uuidAsString)
         if (isDefined(known)) {return known}
+        if (!CloudAssetsEnabled) {return panic(`Sample not found: ${uuidAsString}`)}
         const url = `${OpenSampleAPI.ApiRoot}/get.php?uuid=${uuidAsString}`
         const response = await Promises.retry(() => network.limitFetch(url, OpenDAWHeaders))
         if (!response.ok) {

@@ -8,6 +8,7 @@ if (localStorage.getItem("opendaw-suppress-unload-guard") !== null) {
 import {App} from "@/ui/App.tsx"
 import {isDefined, panic, Progress, RuntimeNotification, RuntimeNotifier, UUID} from "@opendaw/lib-std"
 import {StudioService} from "@/service/StudioService"
+import {AgentBridge} from "@/agent/AgentBridge"
 import {SampleMetaData, SoundfontMetaData} from "@opendaw/studio-adapters"
 import {Dialogs} from "@/ui/components/dialogs.tsx"
 import {installCursors} from "@/ui/Cursors.ts"
@@ -177,6 +178,7 @@ export const boot = async ({workersUrl, workletsUrl, wasmProcessorUrl, wasmOffli
         notify: ({message, icon, origin}) => Surface.get(origin)
             .toast(message, isDefined(icon) ? IconSymbol.fromName(icon) : IconSymbol.Notification)
     })
+    AgentBridge.install(service)
     replaceChildren(surface.ground, App(service))
     AnimationFrame.start(window)
     installCursors()
