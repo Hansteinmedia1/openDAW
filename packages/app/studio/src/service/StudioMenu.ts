@@ -64,7 +64,9 @@ export const populateStudioMenu = (service: StudioService) => {
                             MenuItem.default({label: "Preset Bundle..."})
                                 .setTriggerProcedure(() => service.importPreset().then(EmptyExec)),
                             MenuItem.default({label: "DAWproject..."})
-                                .setTriggerProcedure(() => service.importDawproject().then(EmptyExec, EmptyExec))
+                                .setTriggerProcedure(() => service.importDawproject().then(EmptyExec, EmptyExec)),
+                            MenuItem.default({label: "Ableton Live Set..."})
+                                .setTriggerProcedure(() => service.importAbletonLiveSet().then(EmptyExec, EmptyExec))
                         )),
                     MenuItem.default({label: "Export", selectable: service.hasProfile})
                         .setRuntimeChildrenProcedure(parent => parent.addMenuItem(
@@ -74,6 +76,8 @@ export const populateStudioMenu = (service: StudioService) => {
                                 .setTriggerProcedure(() => service.exportStems()),
                             MenuItem.default({label: "DAWproject...", selectable: service.hasProfile})
                                 .setTriggerProcedure(async () => service.exportDawproject()),
+                            MenuItem.default({label: "Ableton Live Set...", selectable: service.hasProfile})
+                                .setTriggerProcedure(async () => service.exportAbletonLiveSet()),
                             MenuItem.default({
                                 label: "JSON...",
                                 selectable: service.hasProfile,

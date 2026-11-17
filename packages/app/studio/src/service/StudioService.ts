@@ -54,6 +54,7 @@ import {
     AudioMaterialAnalyzer,
     AudioWorklets,
     CloudAuthManager,
+    AbletonService,
     DawProjectService,
     EngineFacade,
     EngineWorklet,
@@ -288,10 +289,20 @@ export class StudioService implements ProjectEnv {
             })
     }
 
+    async importAbletonLiveSet() {
+        (await AbletonService.importLiveSet(this.sampleService))
+            .ifSome(skeleton => this.#projectProfileService
+                .setProject(Project.fromSkeleton(this, skeleton), "Ableton Live Set"))
+    }
+
     async importDawproject() {
         (await DawProjectService.importDawproject(this.sampleService))
             .ifSome(skeleton => this.#projectProfileService
                 .setProject(Project.fromSkeleton(this, skeleton), "Dawproject"))
+    }
+
+    async exportAbletonLiveSet() {
+        return this.#projectProfileService.getValue().ifSome(profile => AbletonService.exportLiveSet(profile))
     }
 
     async exportDawproject() {

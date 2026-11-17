@@ -63,6 +63,8 @@ export namespace SpotlightStudioEntries {
             ["Import Soundfont Files...", ["sf2"], IconSymbol.SoundFont, () => service.soundfontService.browse(true)],
             ["Import Preset Bundle...", ["Presets"], IconSymbol.Box, () => service.importPreset()],
             ["Import DAWproject...", ["Bitwig", "Studio One"], IconSymbol.FileList, () => service.importDawproject()],
+            ["Import Ableton Live Set...", ["Ableton", "als"], IconSymbol.FileList, () => service.importAbletonLiveSet()],
+            ["Export Ableton Live Set...", ["Ableton", "als"], IconSymbol.FileList, () => service.exportAbletonLiveSet()],
             ["Neural Demux...", ["Split", "Separate", "Stems"], IconSymbol.Robot, () => NeuralDemux.run(service)]
         ]
         return items.map(([label, keywords, icon, run]): SpotlightEntry => ({

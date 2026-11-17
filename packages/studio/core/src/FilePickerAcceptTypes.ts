@@ -53,6 +53,10 @@ export namespace FilePickerAcceptTypes {
         description: "dawproject",
         accept: {"application/octet-stream": [".dawproject"]}
     }
+    export const AbletonLiveSetFileType: FilePickerAcceptType = {
+        description: "Ableton Live Set",
+        accept: {"application/octet-stream": [".als"]}
+    }
     export const JsonFileType: FilePickerAcceptType = {
         description: "json",
         accept: {"application/json": [".json"]}
