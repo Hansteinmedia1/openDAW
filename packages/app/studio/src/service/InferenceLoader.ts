@@ -14,7 +14,7 @@ let cached: Nullable<InferenceModule> = null
 export const ensureInference = async (): Promise<typeof InferenceLib.Inference> => {
     if (isNull(cached)) {
         cached = await import("@opendaw/lib-inference")
-        cached.Inference.install({opfs: Workers.Opfs})
+        cached.Inference.install({opfs: Workers.Opfs, modelBaseUrl: import.meta.env.VITE_MODEL_BASE_URL})
     }
     return cached.Inference
 }

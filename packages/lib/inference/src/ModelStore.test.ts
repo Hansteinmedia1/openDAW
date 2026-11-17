@@ -148,4 +148,15 @@ describe("ModelStore", () => {
         expect(opfs.files.has("inference/models/test-task/v1/model.onnx")).toBe(true)
         expect(opfs.files.has("inference/models/test-task/v2/model.onnx")).toBe(true)
     })
+
+    it("fetches from the configured model base url instead of the default host", async () => {
+        installInferenceConfig({opfs, modelBaseUrl: "/models"})
+        const fetchMock = vi.fn(async (_url: string) => makeFetchResponse(bytes))
+        vi.stubGlobal("fetch", fetchMock)
+        const hosted: ModelDescriptor = {...model, url: "https://assets.opendaw.studio/models/htdemucs/v4/model.onnx"}
+        await ModelStore.ensure("hosted-task", hosted)
+        expect(fetchMock.mock.calls[0][0]).toBe("/models/htdemucs/v4/model.onnx")
+        await ModelStore.ensure("foreign-task", model)
+        expect(fetchMock.mock.calls[1][0]).toBe("https://example.com/test.onnx")
+    })
 })

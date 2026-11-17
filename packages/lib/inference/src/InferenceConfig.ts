@@ -3,6 +3,8 @@ import {OpfsProtocol} from "@opendaw/lib-fusion"
 
 export interface InferenceConfig {
     readonly opfs: OpfsProtocol
+    // Replaces the default model host (https://assets.opendaw.studio/models) for self-hosted installations
+    readonly modelBaseUrl?: string
 }
 
 let installed: Option<InferenceConfig> = Option.None

@@ -16,6 +16,7 @@ interface ModelMeta {
     readonly downloadedAt: number
 }
 
+const DEFAULT_MODEL_BASE_URL = "https://assets.opendaw.studio/models"
 const ROOT = "inference/models"
 const MODEL_FILE = "model.onnx"
 const META_FILE = "meta.json"
@@ -87,13 +88,14 @@ export namespace ModelStore {
     const download = async (model: ModelDescriptor, options?: FetchOptions): Promise<Uint8Array> => {
         // Cross-origin fetches under COOP+COEP need explicit cors/no-credentials
         // mode so the response is treated as a permitted resource.
-        const response = await fetch(model.url, {
+        const url = resolveUrl(model.url)
+        const response = await fetch(url, {
             signal: options?.signal,
             mode: "cors",
             credentials: "omit"
         })
         if (!response.ok) {
-            return panic(`Model fetch failed: ${response.status} ${response.statusText} (${model.url})`)
+            return panic(`Model fetch failed: ${response.status} ${response.statusText} (${url})`)
         }
         const total = parseInt(response.headers.get("Content-Length") ?? `${model.bytes}`)
         const reader = asDefined(response.body, "Empty response body").getReader()
@@ -113,6 +115,13 @@ export namespace ModelStore {
             offset += chunk.length
         }
         return result
+    }
+
+    const resolveUrl = (url: string): string => {
+        const {modelBaseUrl} = requireInferenceConfig()
+        return isDefined(modelBaseUrl) && url.startsWith(DEFAULT_MODEL_BASE_URL)
+            ? `${modelBaseUrl}${url.slice(DEFAULT_MODEL_BASE_URL.length)}`
+            : url
     }
 
     const sha256Hex = async (bytes: Uint8Array): Promise<string> => {
