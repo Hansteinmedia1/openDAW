@@ -269,7 +269,7 @@ const createHtdemucsTask = (key: string, model: ModelDescriptor): TaskDefinition
 export const StemSeparationTask = createHtdemucsTask("stem-separation", {
     url: "https://assets.opendaw.studio/models/htdemucs/v4/model.onnx",
     sha256: "d2b401f322558cd57d67a752ed7be3fa55178a0626011eda8ac7bb74e17280c0",
-    bytes: 250_000_000,
+    bytes: 304_321_552,
     version: "v4-smank"
 })
 

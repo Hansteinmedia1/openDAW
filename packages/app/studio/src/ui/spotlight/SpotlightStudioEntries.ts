@@ -65,7 +65,7 @@ export namespace SpotlightStudioEntries {
             ["Import DAWproject...", ["Bitwig", "Studio One"], IconSymbol.FileList, () => service.importDawproject()],
             ["Import Ableton Live Set...", ["Ableton", "als"], IconSymbol.FileList, () => service.importAbletonLiveSet()],
             ["Export Ableton Live Set...", ["Ableton", "als"], IconSymbol.FileList, () => service.exportAbletonLiveSet()],
-            ["Neural Demux...", ["Split", "Separate", "Stems"], IconSymbol.Robot, () => NeuralDemux.run(service)]
+            ["In Stems trennen...", ["Neural Demux", "Split", "Separate", "Stems"], IconSymbol.Robot, () => NeuralDemux.run(service)]
         ]
         return items.map(([label, keywords, icon, run]): SpotlightEntry => ({
             verb: "open", label, names: [label, ...keywords], qualifiers: [], icon, detail: "Studio",

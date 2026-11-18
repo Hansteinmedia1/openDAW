@@ -1,3 +1,4 @@
+import css from "./NeuralDemux.sass?inline"
 import {createElement} from "@opendaw/lib-jsx"
 import {
     Bytes,
@@ -10,9 +11,9 @@ import {
     UUID
 } from "@opendaw/lib-std"
 import {Promises} from "@opendaw/lib-runtime"
-import {Files} from "@opendaw/lib-dom"
+import {Files, Html} from "@opendaw/lib-dom"
 import {WavFile} from "@opendaw/lib-dsp"
-import type {ExecutionProvider, Inference as InferenceNamespace, TaskKey} from "@opendaw/lib-inference"
+import type {ExecutionProvider, TaskKey} from "@opendaw/lib-inference"
 import {AudioContentFactory, Project, ProjectMeta, ProjectProfile} from "@opendaw/studio-core"
 import {InstrumentFactories, Sample} from "@opendaw/studio-adapters"
 import {AudioFileBox} from "@opendaw/studio-boxes"
@@ -20,42 +21,29 @@ import {Dialogs} from "@/ui/components/dialogs.tsx"
 import {StudioService} from "@/service/StudioService"
 import {ensureInference} from "@/service/InferenceLoader"
 
+const className = Html.adoptStyleSheet(css, "NeuralDemux")
+
 type StemSeparationKey = Extract<TaskKey, `stem-separation${string}`>
 
-interface ModelOption {
-    readonly key: StemSeparationKey
-    readonly label: string
-    readonly description: string
-}
+const TASK: StemSeparationKey = "stem-separation"
+const HEADLINE = "In Stems trennen"
+const MODEL_INFO = "Modell: Hybrid Transformer Demucs v4 (ONNX-Export smank/htdemucs-onnx, MIT)."
 
-const MODELS: ReadonlyArray<ModelOption> = [
-    {
-        key: "stem-separation",
-        label: "htdemucs v4 (smank, MIT)",
-        description: "Hybrid Transformer Demucs v4 — drums / bass / other / vocals.\nONNX export: smank/htdemucs-onnx. License: MIT."
-    },
-    {
-        key: "stem-separation-alt",
-        label: "htdemucs v4 (jackjiangxinfa, Apache-2.0)",
-        description: "Same Demucs v4 architecture, alternate ONNX export.\nUseful for A/B comparing separation quality. License: Apache-2.0."
-    }
-]
-
-const STEM_NAMES = ["drums", "bass", "other", "vocals"] as const
-type StemName = typeof STEM_NAMES[number]
-
-interface Selection {
-    readonly model: ModelOption
-    readonly provider: ExecutionProvider
-}
+// Track colours are hues only, there is no grey: the remainder uses teal
+const STEMS = [
+    {key: "drums", label: "Schlagzeug", hue: 346.0},
+    {key: "bass", label: "Bass", hue: 204.0},
+    {key: "vocals", label: "Gesang", hue: 40.0},
+    {key: "other", label: "Rest", hue: 176.0}
+] as const
 
 const isWebGPUAvailable = (): boolean =>
     isDefined((navigator as Navigator & { gpu?: unknown }).gpu)
 
 const providerLabel = (provider: ExecutionProvider): string =>
-    provider === "webgpu" ? "WebGPU (GPU)" : "WASM (CPU)"
+    provider === "webgpu" ? "Grafikkarte (WebGPU)" : "Prozessor (WASM)"
 
-const lastProviderByTask = new Map<StemSeparationKey, ExecutionProvider>()
+let lastProvider: Option<ExecutionProvider> = Option.None
 
 const decodeAudioFile = async (file: File, sampleRate: number):
     Promise<{ audio: Float32Array, channels: 1 | 2, frames: number }> => {
@@ -73,66 +61,56 @@ const decodeAudioFile = async (file: File, sampleRate: number):
     return {audio: planar, channels, frames}
 }
 
-const pickSelection = async (Inference: typeof InferenceNamespace,
-                             defaultKey: StemSeparationKey): Promise<Option<Selection>> => {
+// The model expects two channels
+const toStereo = (audio: Float32Array, channels: 1 | 2, frames: number): Float32Array => {
+    if (channels === 2) {return audio}
+    const stereo = new Float32Array(2 * frames)
+    stereo.set(audio.subarray(0, frames), 0)
+    stereo.set(audio.subarray(0, frames), frames)
+    return stereo
+}
+
+const toSourceChannels = (stem: Float32Array, channels: 1 | 2, frames: number): ReadonlyArray<Float32Array> => {
+    const left = stem.subarray(0, frames)
+    const right = stem.subarray(frames, 2 * frames)
+    return channels === 2 ? [left, right] : [left.map((value, index) => (value + right[index]) * 0.5)]
+}
+
+const pickProvider = async (sizeLabel: string): Promise<Option<ExecutionProvider>> => {
     const webgpu = isWebGPUAvailable()
-    const defaultProvider: ExecutionProvider = webgpu ? "webgpu" : "wasm"
-    const renderDescription = (model: ModelOption): string => {
-        const size = Bytes.toString(Inference.modelDescriptor(model.key).bytes)
-        return `${model.description}\n${size} one-time download.`
-    }
-    const modelSelect: HTMLSelectElement = (
-        <select style={{font: "inherit", padding: "4px 8px", width: "100%"}}>
-            {MODELS.map(model =>
-                <option value={model.key} selected={model.key === defaultKey}>{model.label}</option>)}
-        </select>
-    ) as HTMLSelectElement
     const providerSelect: HTMLSelectElement = (
-        <select style={{font: "inherit", padding: "4px 8px", width: "100%"}}>
-            <option value="webgpu" disabled={!webgpu} selected={defaultProvider === "webgpu"}>
-                {`WebGPU (GPU)${webgpu ? "" : " — not available in this browser"}`}
+        <select>
+            <option value="webgpu" disabled={!webgpu} selected={webgpu}>
+                {`${providerLabel("webgpu")}${webgpu ? "" : " – in diesem Browser nicht verfügbar"}`}
             </option>
-            <option value="wasm" selected={defaultProvider === "wasm"}>WASM (CPU)</option>
+            <option value="wasm" selected={!webgpu}>{providerLabel("wasm")}</option>
         </select>
     ) as HTMLSelectElement
-    const initial = MODELS.find(model => model.key === defaultKey)
-    const descriptionEl: HTMLParagraphElement = (
-        <p style={{margin: "8px 0 0", opacity: "0.7", fontSize: "12px", whiteSpace: "pre-line"}}>
-            {isDefined(initial) ? renderDescription(initial) : ""}
-        </p>
-    ) as HTMLParagraphElement
-    modelSelect.addEventListener("change", () => {
-        const found = MODELS.find(model => model.key === modelSelect.value)
-        descriptionEl.textContent = isDefined(found) ? renderDescription(found) : ""
-    })
     const result = await Promises.tryCatch(Dialogs.show({
-        headline: "Neural Demux",
+        headline: HEADLINE,
         content: (
-            <div style={{display: "flex", flexDirection: "column", gap: "8px", minWidth: "360px"}}>
-                <label>Model</label>
-                {modelSelect}
-                <label style={{marginTop: "4px"}}>Execution provider</label>
+            <div className={className}>
+                <label>Rechenweg</label>
                 {providerSelect}
-                {descriptionEl}
+                <p>{`${MODEL_INFO}\n${sizeLabel}, wird einmal geladen und bleibt im Browser gespeichert.`}</p>
             </div>
         ),
-        okText: "Separate",
+        okText: "Trennen",
         cancelable: true
     }))
     if (result.status === "rejected") {return Option.None}
-    const found = MODELS.find(model => model.key === modelSelect.value)
-    if (!isDefined(found)) {return Option.None}
-    const provider: ExecutionProvider = providerSelect.value === "webgpu" ? "webgpu" : "wasm"
-    return Option.wrap({model: found, provider})
+    return Option.wrap(providerSelect.value === "webgpu" ? "webgpu" : "wasm")
 }
+
+const reportFailure = (message: string): Promise<void> => RuntimeNotifier.info({headline: HEADLINE, message})
 
 export namespace NeuralDemux {
     export const run = async (service: StudioService): Promise<void> => {
         const approved = await RuntimeNotifier.approve({
-            headline: "Neural Demux",
-            message: "Separates an audio file into drums, bass, vocals and other, and turns it into an openDAW project.",
-            approveText: "Browse...",
-            cancelText: "Cancel"
+            headline: HEADLINE,
+            message: "Trennt eine Audiodatei in Schlagzeug, Bass, Gesang und Rest und legt die vier Stems als Spuren an.",
+            approveText: "Datei wählen...",
+            cancelText: "Abbrechen"
         })
         if (!approved) {return}
         const fileResult = await Promises.tryCatch(Files.open({
@@ -146,9 +124,10 @@ export namespace NeuralDemux {
         if (isAbsent(fileMaybe)) {return}
         const file: File = fileMaybe
         const Inference = await ensureInference()
-        const selectionOpt = await pickSelection(Inference, "stem-separation")
-        if (selectionOpt.isEmpty()) {return}
-        const {model, provider} = selectionOpt.unwrap()
+        const sizeLabel = Bytes.toString(Inference.modelDescriptor(TASK).bytes)
+        const providerOpt = await pickProvider(sizeLabel)
+        if (providerOpt.isEmpty()) {return}
+        const provider = providerOpt.unwrap()
         await service.audioContext.suspend()
         try {
             await runDemux()
@@ -163,26 +142,22 @@ export namespace NeuralDemux {
             const decoded = await Promises.tryCatch(decodeAudioFile(file, 44100))
             if (decoded.status === "rejected") {
                 console.warn(decoded.error)
-                RuntimeNotifier.notify({message: "Could not decode audio.", icon: "Warning"})
+                await reportFailure("Die Datei konnte nicht gelesen werden. Bitte eine WAV-, MP3-, FLAC-, M4A- oder OGG-Datei wählen.")
                 return
             }
             const {audio, channels, frames} = decoded.value
-            const previousProvider = lastProviderByTask.get(model.key)
-            if (isDefined(previousProvider) && previousProvider !== provider) {
-                await Inference.releaseTask(model.key)
-            }
-            const cached = await Inference.isCached(model.key)
-            const sizeLabel = Bytes.toString(Inference.modelDescriptor(model.key).bytes)
+            if (lastProvider.nonEmpty() && lastProvider.unwrap() !== provider) {await Inference.releaseTask(TASK)}
+            const cached = await Inference.isCached(TASK)
             if (!cached) {
                 const dlProgress = new DefaultObservableValue<number>(0)
                 const dlController = new AbortController()
                 const dlDialog = RuntimeNotifier.progress({
-                    headline: "Downloading model",
-                    message: `${sizeLabel}, one-time`,
+                    headline: "Modell wird geladen",
+                    message: `${sizeLabel}, einmalig`,
                     progress: dlProgress,
                     cancel: () => dlController.abort(Errors.AbortError)
                 })
-                const preloadResult = await Promises.tryCatch(Inference.preload(model.key, {
+                const preloadResult = await Promises.tryCatch(Inference.preload(TASK, {
                     progress: value => dlProgress.setValue(value),
                     signal: dlController.signal,
                     executionProvider: provider
@@ -191,19 +166,19 @@ export namespace NeuralDemux {
                 if (preloadResult.status === "rejected") {
                     if (!Errors.isAbort(preloadResult.error)) {
                         console.warn(preloadResult.error)
-                        RuntimeNotifier.notify({message: "Model download failed.", icon: "Warning"})
+                        await reportFailure("Das Modell konnte nicht geladen werden. Internetverbindung prüfen und erneut versuchen.")
                     }
                     return
                 }
             } else {
                 const loadController = new AbortController()
                 const loadDialog = RuntimeNotifier.progress({
-                    headline: "Loading model",
-                    message: `${sizeLabel}, from cache`,
+                    headline: "Modell wird geladen",
+                    message: `${sizeLabel}, aus dem Browser-Speicher`,
                     cancel: () => loadController.abort(Errors.AbortError)
                 })
                 const sessionResult = await Promises.tryCatch(Promise.race([
-                    Inference.preload(model.key, {
+                    Inference.preload(TASK, {
                         signal: loadController.signal,
                         executionProvider: provider
                     }),
@@ -214,7 +189,7 @@ export namespace NeuralDemux {
                 if (sessionResult.status === "rejected") {
                     if (!Errors.isAbort(sessionResult.error)) {
                         console.warn(sessionResult.error)
-                        RuntimeNotifier.notify({message: "Could not load model.", icon: "Warning"})
+                        await reportFailure("Das Modell konnte nicht gestartet werden. Seite neu laden und erneut versuchen.")
                     }
                     return
                 }
@@ -222,13 +197,13 @@ export namespace NeuralDemux {
             const sepProgress = new DefaultObservableValue<number>(0)
             const sepController = new AbortController()
             const sepDialog = RuntimeNotifier.progress({
-                headline: "Separating stems",
-                message: `Using ${providerLabel(provider)}`,
+                headline: "Stems werden getrennt",
+                message: `Rechenweg: ${providerLabel(provider)}`,
                 progress: sepProgress,
                 cancel: () => sepController.abort(Errors.AbortError)
             })
-            const inferenceResult = await Promises.tryCatch(Inference.run(model.key, {
-                audio, channels, sampleRate: 44100
+            const inferenceResult = await Promises.tryCatch(Inference.run(TASK, {
+                audio: toStereo(audio, channels, frames), channels: 2, sampleRate: 44100
             }, {
                 progress: value => sepProgress.setValue(value),
                 signal: sepController.signal,
@@ -239,43 +214,44 @@ export namespace NeuralDemux {
             if (inferenceResult.status === "rejected") {
                 if (!Errors.isAbort(inferenceResult.error)) {
                     console.warn(inferenceResult.error)
-                    RuntimeNotifier.notify({message: "Neural demux failed.", icon: "Warning"})
+                    await reportFailure(provider === "webgpu"
+                        ? "Die Trennung ist fehlgeschlagen. Erneut versuchen und als Rechenweg „Prozessor (WASM)“ wählen."
+                        : "Die Trennung ist fehlgeschlagen. Seite neu laden und mit einer kürzeren Datei erneut versuchen.")
                 }
                 return
             }
-            lastProviderByTask.set(model.key, provider)
+            lastProvider = Option.wrap(provider)
             const stems = inferenceResult.value
             const importDialog = RuntimeNotifier.progress({
-                headline: "Neural Demux",
-                message: "Importing stems..."
+                headline: "Stems werden importiert"
             })
             const project = service.project
             const sampleService = service.sampleService
-            const importResults: Array<{ name: StemName, sample: Sample }> = []
-            for (const stemName of STEM_NAMES) {
-                const planar = stems[stemName].subarray(0, channels * frames)
+            const importResults: Array<{ name: string, hue: number, sample: Sample }> = []
+            for (const {key, label, hue} of STEMS) {
+                const channelData = toSourceChannels(stems[key], channels, frames)
                 const arrayBuffer = WavFile.encodeInts16({
                     sampleRate: 44100,
                     length: frames,
                     numberOfChannels: channels,
-                    getChannelData: (c: number) => planar.subarray(c * frames, (c + 1) * frames)
+                    getChannelData: (channel: number) => channelData[channel]
                 })
                 const importResult = await Promises.tryCatch(sampleService.importFile({
-                    name: stemName,
+                    name: label,
                     arrayBuffer
                 }))
                 if (importResult.status === "rejected") {
-                    console.warn(`Failed to import stem ${stemName}`, importResult.error)
+                    console.warn(`Failed to import stem ${key}`, importResult.error)
                     continue
                 }
                 const sample = importResult.value
                 await Promises.tryCatch(service.sampleManager.getAudioData(UUID.parse(sample.uuid)))
-                importResults.push({name: stemName, sample})
+                importResults.push({name: label, hue, sample})
             }
             importDialog.terminate()
             const {editing, boxGraph, api} = project
             editing.modify(() => {
-                for (const {name, sample} of importResults) {
+                for (const {name, hue, sample} of importResults) {
                     const {trackBox, instrumentBox} = api.createInstrument(InstrumentFactories.Tape)
                     instrumentBox.label.setValue(name)
                     const uuid = UUID.parse(sample.uuid)
@@ -287,7 +263,7 @@ export namespace NeuralDemux {
                         }))
                     AudioContentFactory.createNotStretchedRegion({
                         boxGraph, sample, audioFileBox, position: 0, targetTrack: trackBox
-                    })
+                    }).hue.setValue(hue)
                 }
             })
         }

@@ -29,9 +29,9 @@ export const ActionButtons = ({service}: Construct) => (
                 onclick={() => service.importBundle()}>
             <Icon symbol={IconSymbol.Folder}/><span>Open Bundle</span>
         </button>
-        <button className="action" title="Split a music file into drums, bass, vocals and other."
+        <button className="action" title="Trennt eine Musikdatei in Schlagzeug, Bass, Gesang und Rest."
                 onclick={() => NeuralDemux.run(service).catch(EmptyExec)}>
-            <Icon symbol={IconSymbol.Robot}/><span>Neural Demux</span>
+            <Icon symbol={IconSymbol.Robot}/><span>In Stems trennen</span>
         </button>
     </div>
 )

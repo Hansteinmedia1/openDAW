@@ -32,14 +32,21 @@ Dialog → Separate), mit `Apps/DAW/agent/test/demux.mjs` aus dem Hauptrepo.
   abweichen.
 - Das Abbrechen während Download und Trennung.
 
-## Fehler
+## Fehler aus der Messung und was daraus wurde
 
-1. **Mono-Dateien scheitern.** Eine Mono-WAV (40 s) endet nach dem Laden des Modells mit der Einblendung „Neural demux
-   failed.“ In der Konsole steht `failed to call OrtRun(). ERROR_CODE: 2, ERROR_MESSAGE: Got invalid dimensions for
-   input: mix`. Das Modell erwartet zwei Kanäle, `NeuralDemux.tsx` reicht bei Mono aber nur einen weiter. Zweimal
-   nachgestellt. Zurück bleibt ein leeres Projekt „Untitled“.
-2. **Das zweite Modell (jackjiangxinfa) ist nicht gehostet.** Die Auswahl im Dialog endet mit „Model download failed.“
-3. **Fehlermeldungen sind kurze Einblendungen** ohne Ursache und ohne nächsten Schritt.
+1. **Mono-Dateien scheiterten** mit „Neural demux failed.“ (`Got invalid dimensions for input: mix`): Das Modell erwartet
+   zwei Kanäle. Behoben am 18.11.2026: Mono wird vor der Trennung auf zwei Kanäle verdoppelt, die Stems kommen wieder als
+   Mono zurück. Geprüft mit einer Mono-WAV von 40 s, WebGPU und WASM: vier Spuren von 40 s.
+2. **Das zweite Modell (jackjiangxinfa, Apache-2.0)** war nicht gehostet und endete mit „Model download failed.“ Es ist
+   derselbe Demucs v4 in einem anderen ONNX-Export. Aus dem Dialog entfernt.
+3. **Fehlermeldungen waren kurze Einblendungen.** Jetzt Dialoge, die Ursache und nächsten Schritt nennen.
+
+## Oberfläche (seit 18.11.2026)
+
+Die Funktion heißt „In Stems trennen“ (Menü Import, Spotlight, Dashboard); intern bleibt der Name `NeuralDemux`.
+Die Spuren heißen Schlagzeug, Bass, Gesang und Rest, ihre Regionen tragen die Farbtöne Rost (346), Blau (204), Ocker (40)
+und Türkis (176). Das Grau „Schiefer“ aus dem Designsystem gibt es nicht, weil Spurfarben hier nur ein Farbton sind.
+Die Größenangabe des Modells im Code stand auf 250 MB und ist auf die echte Dateigröße korrigiert.
 
 Konsolenmeldungen ohne Bezug zur Trennung: Abrufe der Preset- und WebCLAP-Listen von `assets.opendaw.studio` scheitern an
 CORS (der Schalter `VITE_CLOUD_ASSETS=off` deckt bisher nur Samples und Soundfonts ab), der Nutzerzähler von
@@ -50,7 +57,7 @@ CORS (der Schalter `VITE_CLOUD_ASSETS=off` deckt bisher nur Samples und Soundfon
 | Modell | Quelle | Lizenz | Bei uns |
 |---|---|---|---|
 | htdemucs v4 | ONNX-Export `smank/htdemucs-onnx` (Hugging Face) | MIT | unter `/models/htdemucs/v4/model.onnx` |
-| htdemucs v4, zweiter Export | jackjiangxinfa | Apache-2.0 | nicht gehostet |
+| htdemucs v4, zweiter Export | jackjiangxinfa | Apache-2.0 | nicht gehostet, nicht mehr wählbar |
 
 Demucs selbst (Meta Research, Hybrid Transformer Demucs v4) steht unter MIT. Die Adresse der Modelle kommt aus
 `VITE_MODEL_BASE_URL`, die Prüfsummen stehen unverändert in `packages/lib/inference`.

@@ -57,7 +57,7 @@ export const populateStudioMenu = (service: StudioService) => {
                                 .setTriggerProcedure(() => service.sampleService.browse(true)),
                             MenuItem.default({label: "Stems (Zip)..."})
                                 .setTriggerProcedure(() => service.importStems()),
-                            MenuItem.default({label: "Neural Demux..."})
+                            MenuItem.default({label: "In Stems trennen..."})
                                 .setTriggerProcedure(() => NeuralDemux.run(service).catch(EmptyExec)),
                             MenuItem.default({label: "Soundfont Files..."})
                                 .setTriggerProcedure(() => service.soundfontService.browse(true)),
