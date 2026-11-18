@@ -87,10 +87,10 @@ export const Header = ({lifecycle, service}: Construct) => {
             <MenuButton root={service.menu}
                         onInit={element => TourAnchors.register(lifecycle, element, "menu")}
                         appearance={{color: Colors.gray, activeColor: Colors.bright, tinyTriangle: true}}>
-                <h5><img src="/favicon.svg" alt="" width="16" height="16"/>Basalt</h5>
+                <h5><img src="/basalt-mark.svg" alt=""/>Basalt</h5>
             </MenuButton>
             <hr/>
-            <div style={{display: "flex", alignItems: "center", columnGap: "4px"}}>
+            <div className="group">
                 {manuals}
                 {spotlight}
             </div>
@@ -100,26 +100,23 @@ export const Header = ({lifecycle, service}: Construct) => {
                 <UndoRedoButtons lifecycle={lifecycle} service={service}/>
                 <hr/>
             </Group>
-            <div style={{display: "flex", columnGap: "4px"}}
+            <div className="group"
                  onInit={element => TourAnchors.register(lifecycle, element, "midi")}>
                 <MidiAccessButton lifecycle={lifecycle}/>
                 <CaptureMidiButton lifecycle={lifecycle} service={service}/>
             </div>
-            <hr/>
-            {transport}
-            <hr/>
-            {timecodes}
-            <BaseFrequencyControl lifecycle={lifecycle} service={service}/>
-            <hr/>
-            <MetronomeControl lifecycle={lifecycle}
-                              service={service}
-                              preferences={preferences}/>
-            <hr/>
             <div style={{flex: "1 0 0"}}/>
-            {
-                location.origin.includes("dev.opendaw.studio")
-                && (<h5 style={{color: Colors.cream.toString()}}>DEV VERSION (UNSTABLE)</h5>)}
-            <div style={{flex: "2 0 0"}}/>
+            <div className="center">
+                {transport}
+                <hr/>
+                {timecodes}
+                <BaseFrequencyControl lifecycle={lifecycle} service={service}/>
+                <hr/>
+                <MetronomeControl lifecycle={lifecycle}
+                                  service={service}
+                                  preferences={preferences}/>
+            </div>
+            <div style={{flex: "1 0 0"}}/>
             <HorizontalPeakMeter lifecycle={lifecycle} peaksInDb={peaksInDb} width="4em"/>
             <hr/>
             <div className="panel-selector" onInit={element => TourAnchors.register(lifecycle, element, "screens")}>

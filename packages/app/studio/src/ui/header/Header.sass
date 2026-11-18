@@ -1,20 +1,46 @@
 @use "@/colors"
 
 component
-  height: 2.5em
-  padding: 0.25em 0.5em
+  flex: 0 0 3.5em
+  height: 3.5em
+  padding: 0 1em
   column-gap: 1em
+  border-bottom: 1px solid rgba(white, 0.06)
   display: flex
   place-items: center
   background-color: var(--color-header-background)
 
   h5
-    font-size: 0.75rem
-    font-weight: 700
+    font-size: 1.125rem
+    font-weight: 800
+    letter-spacing: -0.01em
     display: flex
     align-items: center
     column-gap: 0.5em
     position: relative
+
+    > img
+      height: 2.25rem
+      width: 2.25rem
+
+  > .group
+    display: flex
+    align-items: center
+    column-gap: 0.5em
+    font-size: 1.125em
+
+  > .center
+    display: flex
+    align-items: center
+    column-gap: 1em
+    height: 2.75em
+    padding: 0 1em
+    border-radius: 0.5em
+    border: 1px solid rgba(white, 0.06)
+    background-color: var(--color-panel-background)
+
+    hr
+      height: 55%
 
     &:before
       content: ""
@@ -26,7 +52,7 @@ component
 
   hr
     min-width: 1px
-    height: 50%
+    height: 45%
     border: none
     outline: none
     background-color: rgba(white, 0.08)
@@ -60,3 +86,11 @@ component
   .panel-selector
     .no-project &
       opacity: 0.5
+
+  @media (max-width: 1320px)
+    padding: 0 0.5em
+    column-gap: 0.5em
+
+    > .center
+      padding: 0 0.5em
+      column-gap: 0.5em
