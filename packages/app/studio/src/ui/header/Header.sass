@@ -23,6 +23,14 @@ component
       height: 2.25rem
       width: 2.25rem
 
+    &:before
+      content: ""
+      position: absolute
+      top: -4px
+      left: -4px
+      width: calc(100% + 12px)
+      height: calc(100% + 8px)
+
   > .group
     display: flex
     align-items: center
@@ -41,14 +49,6 @@ component
 
     hr
       height: 55%
-
-    &:before
-      content: ""
-      position: absolute
-      top: -4px
-      left: -4px
-      width: calc(100% + 12px)
-      height: calc(100% + 8px)
 
   hr
     min-width: 1px
