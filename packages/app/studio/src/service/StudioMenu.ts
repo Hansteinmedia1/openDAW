@@ -129,13 +129,13 @@ export const populateStudioMenu = (service: StudioService) => {
                         )
                     }),
                     MenuItem.default({
-                        label: "Nextcloud",
+                        label: "Server-Projekte",
                         icon: IconSymbol.Nextcloud
                     }).setRuntimeChildrenProcedure(parent => {
                         parent.addMenuItem(
-                            MenuItem.default({label: "Browse projects..."})
+                            MenuItem.default({label: "Öffnen..."})
                                 .setTriggerProcedure(() => NextcloudDialogs.browse(service)),
-                            MenuItem.default({label: "Upload project...", selectable: service.hasProfile})
+                            MenuItem.default({label: "Hochladen...", selectable: service.hasProfile})
                                 .setTriggerProcedure(() => NextcloudDialogs.save(service)),
                             MenuItem.default({label: "Help", icon: IconSymbol.Help, separatorBefore: true})
                                 .setTriggerProcedure(() => openManual("/manuals/nextcloud"))

@@ -93,15 +93,15 @@ export const NextcloudBrowser = ({lifecycle, handler, username, select, reopen}:
                                                icon.onclick = (event) => {
                                                    event.stopPropagation()
                                                    Dialogs.approve({
-                                                       headline: "Delete Project?",
-                                                       message: `Deletes "${entry.meta.name}" from Nextcloud, including assets`
-                                                           + " no other project uses. This cannot be undone."
+                                                       headline: "Projekt löschen?",
+                                                       message: `Löscht „${entry.meta.name}“ vom Server, samt der Samples, die kein anderes Projekt benutzt.`
+                                                           + " Das lässt sich nicht rückgängig machen."
                                                    }).then(async approved => {
                                                        if (!approved) {return}
                                                        const progressValue = new DefaultObservableValue<unitValue>(0.0)
                                                        const notifier = RuntimeNotifier.progress({
-                                                           headline: "Nextcloud",
-                                                           message: `Deleting "${entry.meta.name}"...`,
+                                                           headline: "Server-Projekte",
+                                                           message: `„${entry.meta.name}“ wird gelöscht...`,
                                                            progress: progressValue
                                                        })
                                                        const {status, error} = await Promises
@@ -110,7 +110,7 @@ export const NextcloudBrowser = ({lifecycle, handler, username, select, reopen}:
                                                        notifier.terminate()
                                                        if (status === "rejected") {
                                                            console.warn(error)
-                                                           RuntimeNotifier.notify({message: "Delete failed.", icon: "Warning"})
+                                                           RuntimeNotifier.notify({message: "Löschen fehlgeschlagen.", icon: "Warning"})
                                                        }
                                                        reopen()
                                                    })

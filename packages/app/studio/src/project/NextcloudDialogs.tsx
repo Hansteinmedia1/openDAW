@@ -44,7 +44,7 @@ export namespace NextcloudDialogs {
 
     export const save = async (service: StudioService): Promise<void> => {
         if (!service.hasProfile) {
-            await RuntimeNotifier.info({headline: "Nextcloud", message: "Open or create a project first."})
+            await RuntimeNotifier.info({headline: "Server-Projekte", message: "Bitte zuerst ein Projekt öffnen oder anlegen."})
             return
         }
         const credentials = await ensureConnection()
@@ -54,8 +54,8 @@ export namespace NextcloudDialogs {
         const profile = service.profile
         const progressValue = new DefaultObservableValue<unitValue>(0.0)
         const notifier = RuntimeNotifier.progress({
-            headline: "Nextcloud Upload",
-            message: `Uploading "${profile.meta.name}"...`,
+            headline: "Auf den Server laden",
+            message: `„${profile.meta.name}“ wird hochgeladen...`,
             progress: progressValue,
             cancel: () => abort.abort()
         })
@@ -66,35 +66,35 @@ export namespace NextcloudDialogs {
         notifier.terminate()
         if (result.status === "resolved") {
             await RuntimeNotifier.info({
-                headline: "Uploaded to Nextcloud",
+                headline: "Auf dem Server gespeichert",
                 message: result.value > 0
-                    ? `Uploaded "${profile.meta.name}".\nWARNING: ${result.value} asset(s) could not be uploaded;`
-                    + " the shared project is incomplete. See console for details."
-                    : `Uploaded "${profile.meta.name}" and its assets.`
+                    ? `„${profile.meta.name}“ hochgeladen.\nACHTUNG: ${result.value} Datei(en) konnten nicht hochgeladen werden;`
+                    + " das Projekt auf dem Server ist unvollständig. Details in der Konsole."
+                    : `„${profile.meta.name}“ mit allen Samples hochgeladen.`
             })
         } else if (!Errors.isAbort(result.error)) {
             console.warn(result.error)
-            RuntimeNotifier.notify({message: "Upload failed.", icon: "Warning"})
+            RuntimeNotifier.notify({message: "Hochladen fehlgeschlagen.", icon: "Warning"})
         }
     }
 
     // Always prompts for and validates credentials so a different Nextcloud user can be chosen each
     // time. None = the user cancelled or the connection failed.
     const ensureConnection = async (): Promise<Option<NextcloudCredentials>> => {
-        const credentials = await Promises.tryCatch(showCredentialsDialog("Connect to Nextcloud"))
+        const credentials = await Promises.tryCatch(showCredentialsDialog("Mit dem Server verbinden"))
         if (credentials.status === "rejected") {return Option.None}
         if (!await connect(new NextcloudHandler(credentials.value))) {return Option.None}
         return Option.wrap(credentials.value)
     }
 
     const connect = async (handler: NextcloudHandler): Promise<boolean> => {
-        const notifier = RuntimeNotifier.progress({headline: "Nextcloud", message: "Connecting..."})
+        const notifier = RuntimeNotifier.progress({headline: "Server-Projekte", message: "Verbinde..."})
         const result = await Promises.tryCatch(handler.alive())
         notifier.terminate()
         if (result.status === "rejected") {
             const reason = result.error instanceof Error ? result.error.message : String(result.error)
             console.warn(reason)
-            RuntimeNotifier.notify({message: "Could not connect.", icon: "Warning"})
+            RuntimeNotifier.notify({message: "Verbindung fehlgeschlagen. Name und Passwort prüfen.", icon: "Warning"})
             return false
         }
         return true
@@ -106,8 +106,8 @@ export namespace NextcloudDialogs {
         const handler = new NextcloudHandler(credentials, abort.signal)
         const progressValue = new DefaultObservableValue<unitValue>(0.0)
         const notifier = RuntimeNotifier.progress({
-            headline: "Nextcloud",
-            message: `Opening "${entry.meta.name}"...`,
+            headline: "Server-Projekte",
+            message: `„${entry.meta.name}“ wird geöffnet...`,
             progress: progressValue,
             cancel: () => abort.abort()
         })
@@ -117,7 +117,7 @@ export namespace NextcloudDialogs {
         if (result.status === "rejected") {
             if (!Errors.isAbort(result.error)) {
                 console.warn(result.error)
-                RuntimeNotifier.notify({message: "Open failed.", icon: "Warning"})
+                RuntimeNotifier.notify({message: "Öffnen fehlgeschlagen.", icon: "Warning"})
             }
             return
         }
@@ -163,27 +163,27 @@ export namespace NextcloudDialogs {
     const askConflict = (name: string): Promise<Conflict> => {
         const {resolve, promise} = Promise.withResolvers<Conflict>()
         const dialog: HTMLDialogElement = (
-            <Dialog headline="Project already exists"
+            <Dialog headline="Projekt gibt es schon"
                     icon={IconSymbol.System}
                     cancelable={true}
                     onCancel={() => resolve("cancel")}
                     buttons={[
                         {
-                            text: "Copy", onClick: handler => {
+                            text: "Als Kopie", onClick: handler => {
                                 resolve("copy")
                                 handler.close()
                             }
                         },
                         {
-                            text: "Override", primary: true, onClick: handler => {
+                            text: "Ersetzen", primary: true, onClick: handler => {
                                 resolve("override")
                                 handler.close()
                             }
                         }
                     ]}>
                 <div style={{padding: "1em 0", maxWidth: "28em"}}>
-                    {`A project "${name}" already exists in your local storage. Override it with the Nextcloud`
-                        + ` version, or keep both by saving the Nextcloud version as a copy?`}
+                    {`Das Projekt „${name}“ liegt schon in diesem Browser. Mit der Fassung vom Server ersetzen`
+                        + ` oder beide behalten und die Server-Fassung als Kopie speichern?`}
                 </div>
             </Dialog>
         )
@@ -196,10 +196,10 @@ export namespace NextcloudDialogs {
         const {resolve, reject, promise} = Promise.withResolvers<BrowseResult>()
         const lifecycle = new Terminator()
         const dialog: HTMLDialogElement = (
-            <Dialog headline="Open from Nextcloud"
+            <Dialog headline="Projekt vom Server öffnen"
                     icon={IconSymbol.Nextcloud}
                     onCancel={() => reject(Errors.AbortError)}
-                    buttons={[{text: "Close", onClick: dialogHandler => dialogHandler.close()}]}
+                    buttons={[{text: "Schließen", onClick: dialogHandler => dialogHandler.close()}]}
                     cancelable={true} style={{height: "30em"}}>
                 <div style={{height: "2em"}}/>
                 <NextcloudBrowser lifecycle={lifecycle} handler={cloudHandler} username={username}
@@ -215,20 +215,20 @@ export namespace NextcloudDialogs {
     export const showCredentialsDialog = async (headline: string): Promise<NextcloudCredentials> => {
         const {resolve, reject, promise} = Promise.withResolvers<NextcloudCredentials>()
         const inputUrl: HTMLInputElement =
-            <input className="default" type="text" autocomplete="url" value={localStorage.getItem(ServerUrlKey) ?? ""}
+            <input className="default" type="text" autocomplete="url" value={localStorage.getItem(ServerUrlKey) ?? `${location.origin}/cloud`}
                    placeholder="https://your-nextcloud"/>
         const inputUser: HTMLInputElement =
-            <input className="default" type="text" autocomplete="username" placeholder="Username"/>
+            <input className="default" type="text" autocomplete="username" placeholder="Name"/>
         const inputPassword: HTMLInputElement =
-            <input className="default" type="password" autocomplete="current-password" placeholder="Password"/>
+            <input className="default" type="password" autocomplete="current-password" placeholder="Passwort"/>
         const approve = () => {
             const baseUrl = inputUrl.value.trim()
             const username = inputUser.value.trim()
             const appPassword = inputPassword.value
             if (baseUrl.length === 0 || username.length === 0 || appPassword.length === 0) {
                 Dialogs.info({
-                    headline: "Missing input",
-                    message: "Server URL, username and password are required."
+                    headline: "Angaben fehlen",
+                    message: "Server, Name und Passwort sind nötig."
                 }).finally()
                 return false
             }
@@ -244,8 +244,8 @@ export namespace NextcloudDialogs {
                     cancelable={true}
                     onCancel={() => reject(Errors.AbortError)}
                     buttons={[
-                        {text: "Close", onClick: handler => handler.close()},
-                        {text: "Connect", primary: true, onClick: handler => {if (approve()) {handler.close()}}}
+                        {text: "Schließen", onClick: handler => handler.close()},
+                        {text: "Verbinden", primary: true, onClick: handler => {if (approve()) {handler.close()}}}
                     ]}>
                 <form style={{
                     padding: "1em 0", display: "grid", gridTemplateColumns: "auto 1fr",
@@ -254,11 +254,11 @@ export namespace NextcloudDialogs {
                     event.preventDefault()
                     if (approve()) {dialog.close()}
                 }}>
-                    <div>Server URL:</div>
+                    <div>Server:</div>
                     {inputUrl}
-                    <div>Username:</div>
+                    <div>Name:</div>
                     {inputUser}
-                    <div>Password:</div>
+                    <div>Passwort:</div>
                     {inputPassword}
                 </form>
             </Dialog>
