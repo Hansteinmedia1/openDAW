@@ -11,6 +11,7 @@ import {createDebugMenu} from "@/service/DebugMenu"
 import {connectRoom} from "@/service/StudioLiveRoomConnect"
 import {NeuralDemux} from "@/service/NeuralDemux.tsx"
 import {NextcloudDialogs} from "@/project/NextcloudDialogs"
+import {LinkSync} from "@/link/LinkSync"
 import {openManual} from "@/ui/manuals"
 
 export const populateStudioMenu = (service: StudioService) => {
@@ -101,6 +102,8 @@ export const populateStudioMenu = (service: StudioService) => {
                         icon: IconSymbol.Connected,
                         separatorBefore: true
                     }).setTriggerProcedure(() => connectRoom(service)),
+                    MenuItem.default({label: "Ableton Link", icon: IconSymbol.Connected, checked: LinkSync.isActive()})
+                        .setTriggerProcedure(() => LinkSync.toggle(service)),
                     MenuItem.default({
                         label: "Show MIDI-Keyboard",
                         icon: IconSymbol.Piano,
