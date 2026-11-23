@@ -24,6 +24,38 @@ export namespace LinkSync {
     let engineChangeByLink = false
     let startTimer: Nullable<ReturnType<typeof setTimeout>> = null
     let announcedPeers = -1
+    let tapNode: Nullable<AudioWorkletNode> = null
+    let tappedSource: Nullable<AudioNode> = null
+    let tapModule: Nullable<Promise<void>> = null
+
+    // Collects the engine output in blocks of 512 frames as interleaved int16 for the Link Audio channel
+    const TapProcessor = `
+        class BasaltLinkTap extends AudioWorkletProcessor {
+            constructor() {
+                super()
+                this.block = new Int16Array(1024)
+                this.fill = 0
+                this.start = 0
+            }
+            process(inputs) {
+                const input = inputs[0]
+                if (input === undefined || input.length === 0) {return true}
+                const left = input[0]
+                const right = input.length > 1 ? input[1] : input[0]
+                if (this.fill === 0) {this.start = currentTime}
+                for (let index = 0; index < left.length; index++) {
+                    this.block[this.fill++] = Math.max(-1, Math.min(1, left[index])) * 32767
+                    this.block[this.fill++] = Math.max(-1, Math.min(1, right[index])) * 32767
+                }
+                if (this.fill >= 1024) {
+                    const data = this.block.slice(0, this.fill)
+                    this.port.postMessage({start: this.start, data}, [data.buffer])
+                    this.fill = 0
+                }
+                return true
+            }
+        }
+        registerProcessor("basalt-link-tap", BasaltLinkTap)`
 
     export const isActive = (): boolean => isDefined(socket)
 
@@ -50,6 +82,11 @@ export namespace LinkSync {
             lifecycle.own(Terminable.create(() => clearInterval(interval)))
             lifecycle.own(service.projectProfileService.catchupAndSubscribe(() => watchProject(service)))
             lifecycle.own(service.engine.isPlaying.subscribe(owner => onLocalTransport(service, owner.getValue())))
+            const tapInterval = setInterval(() => attachTap(service), 1000)
+            lifecycle.own(Terminable.create(() => {
+                clearInterval(tapInterval)
+                detachTap()
+            }))
         }
         connection.onmessage = event => {
             const message: State | Pong = JSON.parse(event.data)
@@ -105,6 +142,50 @@ export namespace LinkSync {
         if (roundTrip > bestRoundTrip * 1.5 && roundTrip > 2) {return}
         bestRoundTrip = Math.min(bestRoundTrip, roundTrip)
         offsetMicros = pong.time - (pingSentAt + received) / 2 * 1000
+    }
+
+    const attachTap = (service: StudioService): void => {
+        const source: Nullable<AudioNode> = service.engine.worklet.unwrapOrNull()
+        if (source === tappedSource) {return}
+        detachTap()
+        if (!isDefined(source)) {return}
+        const {audioContext} = service
+        if (!isDefined(tapModule)) {
+            const url = URL.createObjectURL(new Blob([TapProcessor], {type: "application/javascript"}))
+            tapModule = audioContext.audioWorklet.addModule(url)
+        }
+        tappedSource = source
+        tapModule.then(() => {
+            if (tappedSource !== source || isDefined(tapNode)) {return}
+            const node = new AudioWorkletNode(audioContext, "basalt-link-tap", {numberOfInputs: 1, numberOfOutputs: 0})
+            node.port.onmessage = event => sendAudio(audioContext, event.data.start, event.data.data)
+            source.connect(node)
+            tapNode = node
+        }, () => {tappedSource = null})
+    }
+
+    const detachTap = (): void => {
+        if (isDefined(tapNode) && isDefined(tappedSource)) {
+            tappedSource.disconnect(tapNode)
+            tapNode.port.onmessage = null
+        }
+        tapNode = null
+        tappedSource = null
+    }
+
+    const sendAudio = (audioContext: AudioContext, start: number, data: Int16Array): void => {
+        if (socket?.readyState !== WebSocket.OPEN) {return}
+        const {contextTime, performanceTime} = audioContext.getOutputTimestamp()
+        if (!isDefined(contextTime) || !isDefined(performanceTime)) {return}
+        const heardAtMicros = (performanceTime + (start - contextTime) * 1000) * 1000 + offsetMicros
+        const message = new ArrayBuffer(16 + data.byteLength)
+        const view = new DataView(message)
+        view.setFloat64(0, heardAtMicros, true)
+        view.setUint32(8, audioContext.sampleRate, true)
+        view.setUint16(12, data.length / 2, true)
+        view.setUint16(14, 2, true)
+        new Int16Array(message, 16).set(data)
+        socket.send(message)
     }
 
     const linkNowMicros = (): number => performance.now() * 1000 + offsetMicros

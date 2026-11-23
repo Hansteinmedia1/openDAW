@@ -148,6 +148,7 @@ export class EngineFacade implements Engine {
     get recordingStop(): Option<RecordingStop> {return this.#worklet.flatMap(worklet => worklet.recordingStop)}
     get bpm(): ObservableValue<bpm> {return this.#bpm}
     get isPlaying(): ObservableValue<boolean> {return this.#isPlaying}
+    get worklet(): Option<EngineWorklet> {return this.#worklet}
     get isRecording(): ObservableValue<boolean> {return this.#isRecording}
     get isCountingIn(): ObservableValue<boolean> {return this.#isCountingIn}
     get playbackTimestamp(): ObservableValue<ppqn> {return this.#playbackTimestamp}
