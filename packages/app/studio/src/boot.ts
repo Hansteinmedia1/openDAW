@@ -227,5 +227,8 @@ export const boot = async ({workersUrl, workletsUrl, wasmProcessorUrl, wasmOffli
         if (persisted.status === "resolved" && !persisted.value) {
             await Promises.tryCatch(showStoragePersistDialog())
         }
+    } else {
+        const persisted = await Promises.tryCatch(navigator.storage.persist())
+        console.debug("Storage.isPersisted", persisted.value)
     }
 }
