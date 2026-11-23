@@ -1,4 +1,5 @@
 import css from "./Footer.sass?inline"
+import {LinkSync} from "@/link/LinkSync"
 import {createElement, Frag, LocalLink, replaceChildren} from "@opendaw/lib-jsx"
 import {isDefined, isNotNull, Lifecycle, Nullable, Terminator, TimeSpan} from "@opendaw/lib-std"
 import {StudioService} from "@/service/StudioService"
@@ -73,6 +74,16 @@ export const Footer = ({lifecycle, service}: Construct) => {
                                         value.textContent = "⏏︎"
                                     }
                                 }))
+                        }}/>
+            <FooterItem title="Link" minWidth="14ch"
+                        onInit={({value}) => {
+                            const update = () => {
+                                const {connected, peers, tempo} = LinkSync.status()
+                                value.textContent = !LinkSync.isActive() ? "aus"
+                                    : connected ? `${peers} Teilnehmer · ${tempo.toFixed(1)}` : "sucht..."
+                            }
+                            lifecycle.own(Runtime.scheduleInterval(update, 500))
+                            update()
                         }}/>
             <FooterItem title="SampleRate">{`${audioContext.sampleRate / 1000}k`}</FooterItem>
             <FooterItem title="Output" minWidth="6ch"
