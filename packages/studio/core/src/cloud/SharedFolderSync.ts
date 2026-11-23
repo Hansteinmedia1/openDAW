@@ -213,12 +213,12 @@ export namespace SharedFolderSync {
         const advance = progressStep(audioFileBoxes.length + soundfontFileBoxes.length, progress)
         for (const {address: {uuid: assetUUID}} of audioFileBoxes) {
             checkAbort()
-            await downloadSampleIfAbsent(cloudHandler, assetUUID)
+            if (await downloadSampleIfAbsent(cloudHandler, assetUUID)) {project.sampleManager.invalidate(assetUUID)}
             advance()
         }
         for (const {address: {uuid: assetUUID}} of soundfontFileBoxes) {
             checkAbort()
-            await downloadSoundfontIfAbsent(cloudHandler, assetUUID)
+            if (await downloadSoundfontIfAbsent(cloudHandler, assetUUID)) {project.soundfontManager.invalidate(assetUUID)}
             advance()
         }
         progress(1.0)
@@ -276,21 +276,23 @@ export namespace SharedFolderSync {
         return true
     }
 
-    const downloadSampleIfAbsent = async (cloudHandler: CloudHandler, uuid: UUID.Bytes): Promise<void> => {
+    const downloadSampleIfAbsent = async (cloudHandler: CloudHandler, uuid: UUID.Bytes): Promise<boolean> => {
         const local = `${SampleStorage.Folder}/${UUID.toString(uuid)}`
-        if (await localFileExists(local, "audio.wav")) {return}
+        if (await localFileExists(local, "audio.wav")) {return false}
         const remote = sampleFolder(uuid)
         await writeOpfs(`${local}/audio.wav`, await cloudHandler.download(`${remote}/audio.wav`))
         await writeOpfs(`${local}/peaks.bin`, await cloudHandler.download(`${remote}/peaks.bin`))
         await writeOpfs(`${local}/meta.json`, await cloudHandler.download(`${remote}/meta.json`))
+        return true
     }
 
-    const downloadSoundfontIfAbsent = async (cloudHandler: CloudHandler, uuid: UUID.Bytes): Promise<void> => {
+    const downloadSoundfontIfAbsent = async (cloudHandler: CloudHandler, uuid: UUID.Bytes): Promise<boolean> => {
         const local = `${SoundfontStorage.Folder}/${UUID.toString(uuid)}`
-        if (await localFileExists(local, "soundfont.sf2")) {return}
+        if (await localFileExists(local, "soundfont.sf2")) {return false}
         const remote = soundfontFolder(uuid)
         await writeOpfs(`${local}/soundfont.sf2`, await cloudHandler.download(`${remote}/soundfont.sf2`))
         await writeOpfs(`${local}/meta.json`, await cloudHandler.download(`${remote}/meta.json`))
+        return true
     }
 
     // Lists the UUID folder names already present under a shared asset folder so we can dedup in
